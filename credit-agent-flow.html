@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>当前授信 Agent 流程编排还原</title>
+  <style>
+    :root {
+      --ink: #20242a;
+      --muted: #68717d;
+      --line: #dfe3e8;
+      --soft: #f5f7f9;
+      --paper: #ffffff;
+      --red: #c91f3b;
+      --red-soft: #fff3f5;
+      --blue: #2f6f9f;
+      --blue-soft: #eef6fc;
+      --green: #287458;
+      --green-soft: #eef8f3;
+      --amber: #9a6509;
+      --amber-soft: #fff8e8;
+      --danger: #a43b3b;
+      --danger-soft: #fff0f0;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #f0f2f4;
+      color: var(--ink);
+      font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+      letter-spacing: 0;
+    }
+    .page { width: min(1480px, calc(100% - 36px)); margin: 22px auto 48px; }
+    .hero {
+      border-top: 4px solid var(--red);
+      background: var(--paper);
+      padding: 25px 28px 22px;
+      box-shadow: 0 4px 16px rgba(24, 31, 40, .06);
+    }
+    .eyebrow { color: var(--red); font-size: 12px; font-weight: 700; }
+    h1 { margin: 8px 0 9px; font-size: 28px; line-height: 1.25; }
+    .hero p { max-width: 1000px; margin: 0; color: var(--muted); font-size: 14px; line-height: 1.75; }
+    .verdict {
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      gap: 18px;
+      align-items: center;
+      margin-top: 18px;
+      border: 1px solid #efcbd1;
+      background: var(--red-soft);
+      padding: 14px 16px;
+    }
+    .verdict strong { color: var(--red); font-size: 15px; }
+    .verdict span { color: #4e555e; font-size: 13px; line-height: 1.65; }
+    .section { margin-top: 18px; background: var(--paper); padding: 23px 24px; box-shadow: 0 3px 12px rgba(24, 31, 40, .05); }
+    .section-head { display: flex; justify-content: space-between; gap: 20px; align-items: end; margin-bottom: 18px; }
+    h2 { margin: 0; font-size: 19px; }
+    .section-head p { margin: 0; color: var(--muted); font-size: 12px; }
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .flow {
+      border: 1px solid var(--line);
+      background: #fbfcfd;
+      padding: 16px;
+      min-width: 0;
+    }
+    .flow-title { display: flex; align-items: center; gap: 9px; margin-bottom: 13px; }
+    .flow-title b {
+      display: grid;
+      width: 25px;
+      height: 25px;
+      place-items: center;
+      background: var(--red);
+      color: white;
+      font-size: 12px;
+    }
+    .flow-title strong { font-size: 15px; }
+    .lane {
+      display: grid;
+      grid-template-columns: 92px 1fr;
+      border-top: 1px solid var(--line);
+      min-height: 76px;
+    }
+    .lane:first-of-type { border-top: 0; }
+    .lane-label {
+      border-right: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 13px 10px 10px 0;
+    }
+    .steps { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; padding: 11px 0 11px 12px; }
+    .step {
+      border: 1px solid #d8dde3;
+      background: white;
+      min-width: 105px;
+      max-width: 190px;
+      padding: 8px 9px;
+    }
+    .step strong { display: block; font-size: 11px; margin-bottom: 3px; }
+    .step small { display: block; color: var(--muted); font-size: 9px; line-height: 1.45; }
+    .step.model { border-color: #c8dcec; background: var(--blue-soft); }
+    .step.db { border-color: #cbe1d6; background: var(--green-soft); }
+    .step.warn { border-color: #ead7a9; background: var(--amber-soft); }
+    .arrow { color: #9aa1aa; font-size: 13px; }
+    .callout {
+      margin-top: 12px;
+      border-left: 3px solid var(--amber);
+      background: var(--amber-soft);
+      padding: 10px 12px;
+      color: #5b4a27;
+      font-size: 11px;
+      line-height: 1.65;
+    }
+    .state-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .state-box { border: 1px solid var(--line); padding: 15px; }
+    .state-box h3 { margin: 0 0 12px; font-size: 14px; }
+    .state-line { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
+    .pill { border: 1px solid #d9dde2; background: var(--soft); padding: 6px 8px; font-size: 10px; }
+    .pill.active { border-color: #bed3e6; background: var(--blue-soft); color: var(--blue); }
+    .pill.done { border-color: #c9dfd3; background: var(--green-soft); color: var(--green); }
+    .pill.issue { border-color: #ead7a9; background: var(--amber-soft); color: var(--amber); }
+    .issues { display: grid; grid-template-columns: repeat(3, 1fr); gap: 11px; }
+    .issue { border: 1px solid var(--line); min-height: 148px; padding: 14px; }
+    .issue .no { color: var(--red); font-size: 11px; font-weight: 800; }
+    .issue h3 { margin: 6px 0 7px; font-size: 13px; }
+    .issue p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.65; }
+    .issue.critical { border-color: #e5bfc5; background: #fffafb; }
+    .latency {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 20px;
+      align-items: center;
+      margin-top: 14px;
+      border: 1px solid #cdddeb;
+      background: var(--blue-soft);
+      padding: 15px;
+    }
+    .latency strong { color: var(--blue); font-size: 15px; }
+    .latency p { margin: 0; color: #455b6d; font-size: 11px; line-height: 1.7; }
+    .question { border-top: 4px solid var(--red); }
+    .question h2 { margin-bottom: 5px; }
+    .question > p { color: var(--muted); font-size: 12px; }
+    .options { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 16px; }
+    .option {
+      cursor: pointer;
+      border: 1px solid var(--line);
+      background: white;
+      padding: 13px;
+      transition: border-color .15s, background .15s, transform .15s;
+    }
+    .option:hover { border-color: #d19ba5; transform: translateY(-1px); }
+    .option.selected { border-color: var(--red); background: var(--red-soft); }
+    .option b { display: grid; width: 24px; height: 24px; place-items: center; background: #eceff2; font-size: 11px; }
+    .option.selected b { background: var(--red); color: white; }
+    .option strong { display: block; margin: 9px 0 5px; font-size: 12px; }
+    .option span { color: var(--muted); font-size: 10px; line-height: 1.55; }
+    .footnote { margin-top: 12px; color: #8a919a; font-size: 10px; text-align: right; }
+    @media (max-width: 1000px) {
+      .split, .state-grid { grid-template-columns: 1fr; }
+      .issues { grid-template-columns: 1fr 1fr; }
+      .options { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 620px) {
+      .page { width: calc(100% - 18px); margin-top: 9px; }
+      .hero, .section { padding: 18px 14px; }
+      .verdict, .latency { grid-template-columns: 1fr; }
+      .issues, .options { grid-template-columns: 1fr; }
+      .lane { grid-template-columns: 72px 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <div class="eyebrow">CURRENT STATE · 依据当前代码还原</div>
+      <h1>当前授信 Agent 流程编排</h1>
+      <p>这张图描述系统现在真实执行的流程，而不是目标设计。核心判断是：当前系统由“批量材料分析流水线”和“独立聊天问答接口”两条链路组成，前端负责把它们拼成类似 Agent 的对话体验。</p>
+      <div class="verdict">
+        <strong>当前本质</strong>
+        <span>它更接近“异步材料处理工作流 + 证据问答服务”，还不是一个拥有统一运行实例、事件流、上下文和输出生命周期的 Agent 编排器。</span>
+      </div>
+    </header>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>一、两条彼此分离的主链路</h2>
+        <p>分析过程和聊天过程没有共享同一个 run / turn / event 模型</p>
+      </div>
+      <div class="split">
+        <div class="flow">
+          <div class="flow-title"><b>A</b><strong>点击“开始分析”后的批处理链路</strong></div>
+          <div class="lane">
+            <div class="lane-label">前端</div>
+            <div class="steps">
+              <div class="step"><strong>本地插入用户消息</strong><small>“请基于 X 份材料开始分析”</small></div><span class="arrow">→</span>
+              <div class="step warn"><strong>本地生成过程文字</strong><small>不是后端真实事件，不持久化</small></div><span class="arrow">→</span>
+              <div class="step"><strong>每 1.8 秒轮询</strong><small>task / materials / analysis</small></div>
+            </div>
+          </div>
+          <div class="lane">
+            <div class="lane-label">启动接口</div>
+            <div class="steps">
+              <div class="step"><strong>POST analysis/start</strong><small>校验字段，材料设为 queued</small></div><span class="arrow">→</span>
+              <div class="step db"><strong>返回 202</strong><small>只有 task 状态，没有 run_id</small></div>
+            </div>
+          </div>
+          <div class="lane">
+            <div class="lane-label">材料处理</div>
+            <div class="steps">
+              <div class="step"><strong>最多 3 个并发</strong><small>27 个文件分批处理</small></div><span class="arrow">→</span>
+              <div class="step"><strong>本地解析文档</strong><small>PDF / DOCX / XLSX 等</small></div><span class="arrow">→</span>
+              <div class="step model"><strong>Qwen 材料画像</strong><small>第 1 次模型调用 / 文件</small></div><span class="arrow">→</span>
+              <div class="step model"><strong>Qwen 事实抽取</strong><small>第 2 次模型调用 / 文件</small></div><span class="arrow">→</span>
+              <div class="step db"><strong>引用校验并入库</strong><small>facts / issues / artifact</small></div>
+            </div>
+          </div>
+          <div class="lane">
+            <div class="lane-label">汇总</div>
+            <div class="steps">
+              <div class="step"><strong>等待全部材料结束</strong><small>没有边处理边汇总结论</small></div><span class="arrow">→</span>
+              <div class="step model"><strong>逐冲突调用 Qwen</strong><small>冲突越多，串行调用越多</small></div><span class="arrow">→</span>
+              <div class="step"><strong>公式计算指标</strong><small>确定性代码计算</small></div><span class="arrow">→</span>
+              <div class="step db"><strong>更新任务状态</strong><small>needs_review / complete</small></div>
+            </div>
+          </div>
+          <div class="callout">完成后，前端根据轮询结果重写原来的本地 AI 消息；分析卡片则在消息列表之外单独追加，因此后续追问后，旧卡片仍可能看起来像“最新回复”。</div>
+        </div>
+
+        <div class="flow">
+          <div class="flow-title"><b>B</b><strong>用户普通追问后的聊天链路</strong></div>
+          <div class="lane">
+            <div class="lane-label">前端</div>
+            <div class="steps">
+              <div class="step"><strong>本地插入消息对</strong><small>用户消息 + 空白 AI 消息</small></div><span class="arrow">→</span>
+              <div class="step"><strong>POST chat/stream</strong><small>SSE 请求</small></div>
+            </div>
+          </div>
+          <div class="lane">
+            <div class="lane-label">所谓进度</div>
+            <div class="steps">
+              <div class="step warn"><strong>立即发送 3 条固定文案</strong><small>接收问题 / 整理事实 / 生成回答</small></div><span class="arrow">→</span>
+              <div class="step warn"><strong>随后长时间无事件</strong><small>模型调用期间没有真实 token 或心跳</small></div>
+            </div>
+          </div>
+          <div class="lane">
+            <div class="lane-label">回答生成</div>
+            <div class="steps">
+              <div class="step db"><strong>读取最多 100 条事实</strong><small>按置信度排序</small></div><span class="arrow">→</span>
+              <div class="step model"><strong>一次阻塞式 Qwen 调用</strong><small>要求整份 JSON 一次返回</small></div><span class="arrow">→</span>
+              <div class="step db"><strong>保存用户和 AI 消息</strong><small>模型成功后才 commit</small></div>
+            </div>
+          </div>
+          <div class="lane">
+            <div class="lane-label">输出</div>
+            <div class="steps">
+              <div class="step warn"><strong>将完整答案切成 36 字</strong><small>模型已全部生成完毕</small></div><span class="arrow">→</span>
+              <div class="step"><strong>SSE answer_delta</strong><small>事后分块，不是真实模型流</small></div><span class="arrow">→</span>
+              <div class="step"><strong>前端再次打字机</strong><small>逐步写入同一条 AI 消息</small></div>
+            </div>
+          </div>
+          <div class="callout">若 SSE 任意环节异常，前端会退回普通 `/chat` 再调用一次模型。连接在服务端成功后才断开时，可能产生重复调用、重复消息或新旧回复错位。</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>二、当前状态机能表达什么</h2>
+        <p>只有任务状态和材料状态，没有“某一次 Agent 运行”的状态</p>
+      </div>
+      <div class="state-grid">
+        <div class="state-box">
+          <h3>任务状态</h3>
+          <div class="state-line">
+            <span class="pill">draft</span><span class="arrow">→</span>
+            <span class="pill active">materials_processing</span><span class="arrow">→</span>
+            <span class="pill issue">needs_review</span>
+            <span>或</span>
+            <span class="pill done">analysis_complete</span>
+          </div>
+        </div>
+        <div class="state-box">
+          <h3>单份材料状态</h3>
+          <div class="state-line">
+            <span class="pill">uploaded</span><span class="arrow">→</span>
+            <span class="pill">queued</span><span class="arrow">→</span>
+            <span class="pill active">parsing</span><span class="arrow">→</span>
+            <span class="pill active">extracting</span><span class="arrow">→</span>
+            <span class="pill done">ready</span>
+            <span class="pill issue">needs_review / failed</span>
+          </div>
+        </div>
+      </div>
+      <div class="latency">
+        <strong>27 份文件为何仍然慢</strong>
+        <p>每份文件至少需要 2 次结构化模型调用，27 份约为 54 次；当前并发上限为 3，意味着至少分 9 批。模型输出校验失败时还会重试。全部材料完成后才执行跨文件冲突审查，而每个冲突又可能增加一次串行模型调用。</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>三、当前编排的主要断点</h2>
+        <p>这些问题共同造成“像在聊天，但消息、进度和结果没有真正属于同一轮”的体验</p>
+      </div>
+      <div class="issues">
+        <article class="issue critical"><span class="no">01</span><h3>没有统一 Agent Run</h3><p>开始分析、普通聊天、补充材料、报告生成各走各的接口，没有 run_id、turn_id 和统一事件序列。</p></article>
+        <article class="issue critical"><span class="no">02</span><h3>分析进度由前端推测</h3><p>前端根据材料粗粒度状态拼接过程文字；后端没有真正推送“正在处理哪一页、发现了什么、为何进入复核”。</p></article>
+        <article class="issue critical"><span class="no">03</span><h3>流式输出是事后切片</h3><p>正式答案先由模型一次性完成，再切成 36 字发送。模型慢时，用户仍会经历一段无更新等待。</p></article>
+        <article class="issue"><span class="no">04</span><h3>结果没有绑定消息轮次</h3><p>分析卡片和报告附件固定渲染在聊天列表之后，旧结果可能被显示成最新 AI 回复。</p></article>
+        <article class="issue"><span class="no">05</span><h3>补充材料仍走全量分析</h3><p>前端上传补充材料后调用 full 模式，没有把新增 material_ids 交给 incremental；处理后也没有生成一条完整自然语言总结。</p></article>
+        <article class="issue"><span class="no">06</span><h3>恢复与幂等不足</h3><p>SSE 中断后退回普通请求，可能重复调用模型；刷新页面后，本地分析过程消息消失，无法从事件游标继续。</p></article>
+      </div>
+    </section>
+
+    <section class="section question">
+      <h2>下一步先讨论哪一个核心问题？</h2>
+      <p>请选最影响你测试体验的一项。它会决定我们先定义消息模型，还是先定义执行引擎。</p>
+      <div class="options">
+        <div class="option" data-choice="a" onclick="selectOption(this)">
+          <b>A</b><strong>对话轮次与回复对应</strong><span>每次用户动作都必须有唯一对应的 AI 运行和结果，不允许旧内容漂到最下方。</span>
+        </div>
+        <div class="option" data-choice="b" onclick="selectOption(this)">
+          <b>B</b><strong>真实可恢复的过程流</strong><span>27 个文件处理时持续收到真实事件，刷新或断线后还能继续查看。</span>
+        </div>
+        <div class="option" data-choice="c" onclick="selectOption(this)">
+          <b>C</b><strong>统一 Agent 编排器</strong><span>让分析、追问、补材料、复核和报告都进入同一个规划与工具调用流程。</span>
+        </div>
+        <div class="option" data-choice="d" onclick="selectOption(this)">
+          <b>D</b><strong>三者必须一起重构</strong><span>先建立统一 run/event 基础，再同时修正对话、过程和结果生命周期。</span>
+        </div>
+      </div>
+      <div class="footnote">页面仅还原现状；尚未修改任何业务代码。</div>
+    </section>
+  </main>
+  <script>
+    function selectOption(element) {
+      document.querySelectorAll(".option").forEach((item) => item.classList.remove("selected"));
+      element.classList.add("selected");
+      if (typeof window.toggleSelect === "function") window.toggleSelect(element);
+    }
+  </script>
+</body>
+</html>

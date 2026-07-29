@@ -1,0 +1,22 @@
+后端：
+cd "C:\Users\86180\Desktop\中信苏州2026实习\credit_report_agent\.worktrees\feat-mvp\backend"
+
+.\.venv\Scripts\python.exe -m uvicorn app.main:app `
+  --reload `
+  --host 127.0.0.1 `
+  --port 8000
+
+
+前端：
+cd "C:\Users\86180\Desktop\中信苏州2026实习\credit_report_agent\.worktrees\feat-mvp\frontend"
+
+npm.cmd run dev -- --host 127.0.0.1 --port 5173
+
+Redis:
+sudo service redis-server start
+redis-cli ping
+
+celery:
+cd C:\Users\86180\Desktop\中信苏州2026实习\credit_report_agent\.worktrees\feat-mvp\backend
+.\.venv\Scripts\Activate.ps1
+celery -A app.workers.celery_app:celery_app worker --loglevel=info --pool=solo

@@ -1,0 +1,88 @@
+{
+  "disclaimer": "模拟测试资料，仅用于Coze授信智能体演示；所有企业、人员、代码、账户、合同、征信、权证及机构信息均为虚构，不具法律、审计、征信、担保或审批效力。",
+  "report_date": "2026-03-31",
+  "company": {
+    "name": "小天元科技有限公司",
+    "credit_code": "91320594MA8XTY0001（模拟）",
+    "established": "2019年3月18日",
+    "registered_capital": "3,000万元",
+    "paid_capital": "1,800万元",
+    "legal_rep": "陈昊（模拟人物）",
+    "controller": "陈昊（持股65%）",
+    "shareholders": [
+      [
+        "陈昊",
+        65
+      ],
+      [
+        "周岚",
+        20
+      ],
+      [
+        "苏州天元员工持股平台（有限合伙）",
+        15
+      ]
+    ],
+    "address": "江苏省苏州市工业园区星湖街88号A幢（模拟地址）",
+    "business_address": "江苏省苏州市工业园区金鸡湖大道168号2号厂房（模拟地址）",
+    "employees": 78,
+    "industry": "电子制造业（工业物联网控制模块、边缘网关及电源管理板卡）",
+    "scope": "工业控制模块、嵌入式边缘网关、智能传感器、电源管理板卡的研发、生产与销售；电子元器件采购与技术服务；货物及技术进出口。",
+    "report_date": "2026年3月31日"
+  },
+  "credit_application": {
+    "amount_10k_cny": 1500,
+    "term_months": 12,
+    "products": [
+      "流动资金贷款",
+      "银行承兑汇票"
+    ],
+    "purpose": "采购MCU、通信芯片、PCB及功率器件，支付生产外协费用",
+    "first_repayment_source": "主营业务销售回款和经营现金流",
+    "guarantee": "风险补偿+担保公司+实控人及配偶保证+办公房产抵押"
+  },
+  "financials": {
+    "2023": {
+      "revenue": 10800,
+      "net_profit": 620,
+      "total_assets": 9600,
+      "total_liabilities": 5800,
+      "operating_cash_flow": 510
+    },
+    "2024": {
+      "revenue": 14200,
+      "net_profit": 894,
+      "total_assets": 12000,
+      "total_liabilities": 7900,
+      "operating_cash_flow": 730
+    },
+    "2025": {
+      "revenue": 17100,
+      "net_profit": 1126,
+      "total_assets": 14100,
+      "total_liabilities": 9700,
+      "operating_cash_flow": 810
+    },
+    "2026Q1": {
+      "revenue": 4800,
+      "net_profit": 329,
+      "total_assets": 15400,
+      "total_liabilities": 10740,
+      "operating_cash_flow": -240
+    }
+  },
+  "risk_flags": [
+    "应收账款增长较快",
+    "存货上升",
+    "2026年一季度经营现金流为负",
+    "第一大供应商采购占比较高",
+    "融资规模持续上升"
+  ],
+  "proposed_conditions": [
+    "落实风险补偿及担保公司保证",
+    "办理办公房产第一顺位抵押",
+    "追加实控人及配偶连带保证",
+    "主要销售回款归集至授信银行",
+    "分阶段提款并核验采购合同、发票和资金用途"
+  ]
+}

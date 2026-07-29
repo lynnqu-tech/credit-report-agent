@@ -1,0 +1,23 @@
+# Local logs and editor/tool metadata
+*.log
+.claude/
+.agents/
+.superpowers/
+.worktrees/
+.vscode/
+
+# Python / Node runtime files anywhere in the repository
+**/.env
+**/.venv/
+**/__pycache__/
+**/.pytest_cache/
+**/.ruff_cache/
+**/node_modules/
+**/dist/
+**/coverage/
+**/playwright-report/
+**/test-results/
+**/uploads/
+**/exports/
+# Keep presentation files local unless explicitly reviewed
+*.pptx

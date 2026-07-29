@@ -1,0 +1,65 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: credit
+      POSTGRES_USER: credit
+      POSTGRES_PASSWORD: credit
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U credit -d credit"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+
+  api:
+    build: ./backend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    environment: &backend-environment
+      SECRET_KEY: ${SECRET_KEY:-local-development-secret}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://credit:credit@db:5432/credit}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      QWEN_API_KEY: ${QWEN_API_KEY:-}
+      QWEN_BASE_URL: ${QWEN_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
+      QWEN_CHAT_MODEL: ${QWEN_CHAT_MODEL:-qwen-plus}
+      QWEN_EMBEDDING_MODEL: ${QWEN_EMBEDDING_MODEL:-text-embedding-v4}
+      STORAGE_ROOT: ${STORAGE_ROOT:-/data/uploads}
+      EXPORT_ROOT: ${EXPORT_ROOT:-/data/exports}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - uploads:/data/uploads
+      - exports:/data/exports
+
+  worker:
+    build: ./backend
+    command: celery -A app.workers.celery_app worker --loglevel=INFO
+    environment: *backend-environment
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - uploads:/data/uploads
+      - exports:/data/exports
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      api:
+        condition: service_started
+    ports:
+      - "8080:80"
+
+volumes:
+  postgres_data:
+  uploads:
+  exports:
